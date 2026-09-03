@@ -1,0 +1,7 @@
+[
+  {"id": "q1", "question": "What year did the first moon landing happen?", "answer": "1969", "match": "contains"},
+  {"id": "q2", "question": "What is pi to two decimals?", "answer": "3.14", "match": "numeric", "tol": 0.01},
+  {"id": "q3", "question": "Name the capital of France.", "answer": "Paris", "match": "contains"},
+  {"id": "q4", "question": "What does HTTP status 404 mean?", "answer": "Not Found", "match": "contains"},
+  {"id": "q5", "question": "How many bits are in a byte?", "answer": "8", "match": "numeric"}
+]

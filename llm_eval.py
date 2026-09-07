@@ -32,8 +32,15 @@ def normalize(text: str) -> str:
 
 
 def first_number(text: str):
-    """Pull the first number out of a string, or None if there isn't one."""
-    m = re.search(r"-?\d+(?:\.\d+)?", text.replace(",", ""))
+    """Pull the first standalone number out of a string, or None if there isn't one.
+
+    A leading ``-`` counts as a negative sign only when it is a real sign (start of
+    string, or after a space or punctuation) -- a hyphen inside a token such as
+    ``GPT-4`` is not read as minus four. Digits glued to a preceding word or hyphen
+    are skipped, so ``"GPT-4 scored 90"`` yields ``90``. A leading decimal point is
+    handled too, so ``".5"`` is ``0.5``, not ``5``.
+    """
+    m = re.search(r"(?<![\w.\-])-?\d*\.?\d+", text.replace(",", ""))
     return float(m.group()) if m else None
 
 
@@ -42,7 +49,8 @@ def is_correct(item: dict, model_answer: str) -> bool:
 
     match types:
       exact    -> normalized model answer equals the normalized gold answer
-      contains -> normalized gold answer appears inside the normalized model answer
+      contains -> normalized gold answer appears as a whole word/phrase in the
+                  normalized model answer
       numeric  -> first numbers within `tol` of each other (default tol 0.0)
     """
     kind = item.get("match", "exact")
@@ -52,7 +60,16 @@ def is_correct(item: dict, model_answer: str) -> bool:
         return normalize(model_answer) == normalize(gold)
 
     if kind == "contains":
-        return normalize(gold) in normalize(model_answer)
+        # Whole-word / phrase presence, so gold "8" does not match "18" and "no"
+        # does not match "know". This is still a *literal* presence test: it does
+        # not understand negation, so gold "1969" matches both "in 1969" and "not
+        # in 1969". Use exact/numeric when a wrong answer could merely embed the
+        # gold string.
+        gold_norm = normalize(gold)
+        if not gold_norm:
+            return True
+        pattern = r"(?<!\w)" + re.escape(gold_norm) + r"(?!\w)"
+        return re.search(pattern, normalize(model_answer)) is not None
 
     if kind == "numeric":
         got = first_number(model_answer)

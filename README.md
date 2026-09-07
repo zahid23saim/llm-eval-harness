@@ -56,13 +56,19 @@ The `match` field is the important part — it tells the scorer *how* to compare
 | match | passes when… |
 |-------|--------------|
 | `exact` | the normalized model answer equals the normalized gold answer |
-| `contains` | the normalized gold answer appears inside the model answer |
+| `contains` | the normalized gold answer appears as a whole word or phrase in the model answer |
 | `numeric` | the first number in each is within `tol` (default `0.0`) |
 
 Normalization lowercases, trims, collapses whitespace, and drops trailing
 punctuation — so `contains` correctly passes an answer like *"The moon landing was
 in 1969."* against gold `1969`, which an exact-match-only script would have marked
 wrong and sent you chasing a non-bug.
+
+`contains` matches on word boundaries, so gold `8` won't spuriously match `18`
+and `no` won't match `know`. It is still a *literal* presence test, though — it
+can't read negation, so gold `1969` matches both *"in 1969"* and *"not in 1969"*.
+When a wrong answer could merely embed the gold string, prefer `exact` or
+`numeric` (or the richer match rules in the Pro kit below).
 
 ### The answers file
 

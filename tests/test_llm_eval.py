@@ -23,6 +23,39 @@ def test_contains_finds_answer_inside_a_sentence():
     assert not le.is_correct(item, "It was in 1970.")
 
 
+def test_contains_matches_whole_words_not_substrings():
+    # gold "8" must not match inside "18"; "no" must not match inside "know"
+    assert not le.is_correct({"answer": "8", "match": "contains"}, "a byte has 18 bits")
+    assert not le.is_correct({"answer": "no", "match": "contains"}, "I do not know")
+    # but a genuine whole-word occurrence still matches
+    assert le.is_correct({"answer": "no", "match": "contains"}, "the answer is no")
+
+
+@pytest.mark.xfail(strict=True, reason="contains is a literal presence test and "
+                   "cannot detect negation; use exact/numeric for answers that "
+                   "could merely embed the gold string")
+def test_contains_cannot_detect_negation():
+    item = {"answer": "1969", "match": "contains"}
+    assert not le.is_correct(item, "it was not in 1969")
+
+
+def test_first_number_does_not_read_a_hyphen_in_a_token_as_minus():
+    # "GPT-4" is a model name, not -4; the real number is 90
+    assert le.first_number("GPT-4 scored 90") == 90.0
+
+
+def test_first_number_handles_a_leading_decimal_point():
+    assert le.first_number(".5") == 0.5
+
+
+def test_first_number_keeps_genuine_negatives():
+    assert le.first_number("the delta was -5 points") == -5.0
+
+
+def test_first_number_is_none_without_digits():
+    assert le.first_number("seven") is None
+
+
 def test_numeric_respects_tolerance():
     item = {"answer": "3.14", "match": "numeric", "tol": 0.01}
     assert le.is_correct(item, "about 3.14159")

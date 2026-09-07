@@ -105,6 +105,8 @@ This grew out of a write-up on automating LLM answer evaluation:
 
 ## Pro version — LLM-Eval Starter Kit
 
+![The kit's regression diff — compare two runs and see exactly which cases broke, wired for CI](demo-diff.gif)
+
 This harness covers `exact` / `contains` / `numeric` matching, and it's free forever (MIT).
 
 When you need the next steps for real evaluation work, the

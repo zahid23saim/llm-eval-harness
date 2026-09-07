@@ -119,7 +119,7 @@ adds:
 - **regression diffs** — see exactly which items a model or prompt change broke, wired for CI
 - shareable HTML / Markdown / JSON reports
 
-Still zero dependencies, standard library only. **Launch price $24** for the first two weeks →
+Still zero dependencies, standard library only. **Launch price $19** for the first two weeks →
 <https://saimzahid8.gumroad.com/l/llm-eval-kit/LAUNCH>
 
 ## License

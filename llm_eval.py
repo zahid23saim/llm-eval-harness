@@ -24,23 +24,31 @@ import sys
 # --------------------------------------------------------------------------- #
 # matching
 # --------------------------------------------------------------------------- #
-def normalize(text: str) -> str:
-    """Lowercase, strip, collapse whitespace, drop trailing punctuation."""
-    text = text.strip().lower()
+def normalize(text) -> str:
+    """Lowercase, strip, collapse whitespace, drop trailing punctuation.
+
+    Non-string values are coerced to ``str`` first, so a gold answer written as a
+    bare JSON number (``{"answer": 1969}``) is handled instead of crashing.
+    """
+    text = str(text).strip().lower()
     text = re.sub(r"\s+", " ", text)
     return text.rstrip(".!?,;:")
 
 
-def first_number(text: str):
+def first_number(text):
     """Pull the first standalone number out of a string, or None if there isn't one.
 
-    A leading ``-`` counts as a negative sign only when it is a real sign (start of
-    string, or after a space or punctuation) -- a hyphen inside a token such as
-    ``GPT-4`` is not read as minus four. Digits glued to a preceding word or hyphen
-    are skipped, so ``"GPT-4 scored 90"`` yields ``90``. A leading decimal point is
-    handled too, so ``".5"`` is ``0.5``, not ``5``.
+    Handles a leading decimal (``".5"`` -> ``0.5``) and scientific notation
+    (``"1e-9"``). A leading ``-`` counts as a negative sign only when it is a real
+    sign (start of string, or after a space or punctuation), so a hyphen inside a
+    token such as ``GPT-4`` is not read as minus four and digits glued to a
+    preceding word/hyphen are skipped -- so ``"GPT-4 scored 90"`` yields ``90``.
+    Commas are stripped only where they group thousands (``"1,000"`` -> ``1000``),
+    so a decimal comma like ``"3,14"`` is not silently turned into ``314``.
+    Non-string values are coerced to ``str`` first.
     """
-    m = re.search(r"(?<![\w.\-])-?\d*\.?\d+", text.replace(",", ""))
+    text = re.sub(r"(?<=\d),(?=\d{3}(?:\D|$))", "", str(text))
+    m = re.search(r"(?<![\w.\-])-?\d*\.?\d+(?:[eE][+-]?\d+)?", text)
     return float(m.group()) if m else None
 
 
@@ -151,6 +159,14 @@ def main(argv=None) -> int:
 
     gold = load_gold(args.gold)
     answers = load_answers(args.answers)
+
+    gold_ids = {item["id"] for item in gold}
+    extra = [aid for aid in answers if aid not in gold_ids]
+    if extra:
+        shown = ", ".join(map(str, extra[:5])) + (" ..." if len(extra) > 5 else "")
+        print(f"warning: {len(extra)} answer id(s) not in the gold set were ignored: {shown}",
+              file=sys.stderr)
+
     acc, failures = score(gold, answers)
 
     print(f"accuracy: {acc:.0%}  ({len(gold) - len(failures)}/{len(gold)})")

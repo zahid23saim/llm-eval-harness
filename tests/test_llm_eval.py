@@ -56,6 +56,30 @@ def test_first_number_is_none_without_digits():
     assert le.first_number("seven") is None
 
 
+def test_first_number_parses_scientific_notation():
+    assert le.first_number("learning rate 1e-9") == 1e-9
+
+
+def test_first_number_keeps_thousands_comma_but_not_decimal_comma():
+    assert le.first_number("1,000 tokens") == 1000.0
+    # an ambiguous decimal comma must not be silently turned into 314
+    assert le.first_number("3,14") == 3.0
+
+
+def test_non_string_answers_do_not_crash():
+    # a gold answer written as a bare JSON number must not blow up normalize
+    assert le.normalize(1969) == "1969"
+    assert le.is_correct({"answer": 1969, "match": "contains"}, "it happened in 1969")
+    assert le.is_correct({"answer": 8, "match": "numeric"}, "the count is 8")
+
+
+def test_cli_warns_about_answer_ids_not_in_gold(tmp_path, capsys):
+    gold = _write(tmp_path, "gold.json", [{"id": "a", "answer": "x", "match": "exact"}])
+    answers = _write(tmp_path, "answers.json", {"a": "x", "ghost": "y"})
+    le.main([gold, answers])
+    assert "ghost" in capsys.readouterr().err
+
+
 def test_numeric_respects_tolerance():
     item = {"answer": "3.14", "match": "numeric", "tol": 0.01}
     assert le.is_correct(item, "about 3.14159")

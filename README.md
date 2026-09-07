@@ -103,6 +103,23 @@ python -m pytest -q
 This grew out of a write-up on automating LLM answer evaluation:
 [Automating LLM Answer Evaluation with a Small Python Scoring Script](https://dev.to/zahid23saim/automating-llm-answer-evaluation-with-a-small-python-scoring-script-4f8o).
 
+## Pro version — LLM-Eval Starter Kit
+
+This harness covers `exact` / `contains` / `numeric` matching, and it's free forever (MIT).
+
+When you need the next steps for real evaluation work, the
+**[LLM-Eval Starter Kit](https://saimzahid8.gumroad.com/l/llm-eval-kit)** builds on this repo and
+adds:
+
+- more match rules — `regex`, `all_of`, `any_of`, `choice`, `json_field`
+- **LLM-as-judge** rubric grading (bring your own key; OpenAI / OpenRouter / local)
+- **pass@k** for sampled and agentic runs
+- **regression diffs** — see exactly which items a model or prompt change broke, wired for CI
+- shareable HTML / Markdown / JSON reports
+
+Still zero dependencies, standard library only. **Launch price $24** for the first two weeks →
+<https://saimzahid8.gumroad.com/l/llm-eval-kit/LAUNCH>
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

@@ -45,7 +45,7 @@ Keep your evaluation data as plain JSON so anyone can edit it without touching c
 
 ```json
 [
-  {"id": "q1", "question": "What year did the first moon landing happen?", "answer": "1969", "match": "contains"},
+  {"id": "q1", "question": "What year did the first moon landing happen?", "answer": "1969", "match": "numeric"},
   {"id": "q2", "question": "What is pi to two decimals?", "answer": "3.14", "match": "numeric", "tol": 0.01},
   {"id": "q3", "question": "Name the capital of France.", "answer": "Paris", "match": "contains"}
 ]
@@ -59,16 +59,22 @@ The `match` field is the important part — it tells the scorer *how* to compare
 | `contains` | the normalized gold answer appears as a whole word or phrase in the model answer |
 | `numeric` | the first number in each is within `tol` (default `0.0`) |
 
-Normalization lowercases, trims, collapses whitespace, and drops trailing
-punctuation — so `contains` correctly passes an answer like *"The moon landing was
-in 1969."* against gold `1969`, which an exact-match-only script would have marked
-wrong and sent you chasing a non-bug.
+Normalization case-folds, trims, collapses whitespace, drops trailing punctuation,
+and applies Unicode NFC — so `contains` correctly passes an answer like *"The
+capital of France is Paris."* against gold `Paris`, which an exact-match-only
+script would have marked wrong and sent you chasing a non-bug.
 
 `contains` matches on word boundaries, so gold `8` won't spuriously match `18`
 and `no` won't match `know`. It is still a *literal* presence test, though — it
-can't read negation, so gold `1969` matches both *"in 1969"* and *"not in 1969"*.
-When a wrong answer could merely embed the gold string, prefer `exact` or
-`numeric` (or the richer match rules in the Pro kit below).
+can't read negation, so gold `Paris` matches both *"the capital is Paris"* and
+*"the capital is not Paris."* When a wrong answer could merely embed the gold
+string, prefer `exact` or `numeric` — which is exactly why `q1`'s year is checked
+with `numeric`, not `contains` (or reach for the richer rules in the Pro kit
+below).
+
+`numeric` has its own blind spot: it is first-number-wins, with no notion of
+negation or position, so it reads `42` out of *"not 42"*. Use it only when the
+answer essentially *is* the number.
 
 ### The answers file
 

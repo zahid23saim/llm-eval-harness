@@ -39,6 +39,25 @@ def test_contains_cannot_detect_negation():
     assert not le.is_correct(item, "it was not in 1969")
 
 
+@pytest.mark.xfail(strict=True, reason="numeric is first-number-wins and blind to "
+                   "negation/position, so 'the answer is not 42' still yields 42 and "
+                   "passes; use exact/a stricter rule when a wrong answer could carry "
+                   "the gold number")
+def test_numeric_cannot_detect_negation():
+    item = {"answer": "42", "match": "numeric"}
+    assert not le.is_correct(item, "the answer is not 42")
+
+
+def test_exact_normalizes_unicode_nfc():
+    # "cafe" + acute accent written two ways must compare equal after NFC:
+    # one precomposed codepoint vs. plain "e" + a combining acute accent.
+    composed = "caf\u00e9"       # e-acute as one codepoint (U+00E9)
+    decomposed = "cafe\u0301"    # plain e + combining acute (U+0301)
+    assert composed != decomposed          # genuinely different byte sequences
+    assert le.normalize(composed) == le.normalize(decomposed)
+    assert le.is_correct({"answer": composed, "match": "exact"}, decomposed)
+
+
 def test_first_number_does_not_read_a_hyphen_in_a_token_as_minus():
     # "GPT-4" is a model name, not -4; the real number is 90
     assert le.first_number("GPT-4 scored 90") == 90.0

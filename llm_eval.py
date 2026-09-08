@@ -19,18 +19,24 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
 
 
 # --------------------------------------------------------------------------- #
 # matching
 # --------------------------------------------------------------------------- #
 def normalize(text) -> str:
-    """Lowercase, strip, collapse whitespace, drop trailing punctuation.
+    """Case-fold, strip, collapse whitespace, drop trailing punctuation.
 
-    Non-string values are coerced to ``str`` first, so a gold answer written as a
-    bare JSON number (``{"answer": 1969}``) is handled instead of crashing.
+    The value is coerced to ``str`` and Unicode-normalized to NFC first, so a gold
+    answer written as a bare JSON number (``{"answer": 1969}``) is handled, and
+    accented text that differs only by composed vs decomposed form still matches
+    (``"café"`` == ``"café"``). Case-folding (rather than ``lower()``)
+    means e.g. German ``"ß"`` compares equal to ``"ss"``. It does NOT fold
+    confusables (a curly vs straight apostrophe stay different), so pin a canonical
+    form yourself for answers where that matters.
     """
-    text = str(text).strip().lower()
+    text = unicodedata.normalize("NFC", str(text)).strip().casefold()
     text = re.sub(r"\s+", " ", text)
     return text.rstrip(".!?,;:")
 
@@ -60,6 +66,10 @@ def is_correct(item: dict, model_answer: str) -> bool:
       contains -> normalized gold answer appears as a whole word/phrase in the
                   normalized model answer
       numeric  -> first numbers within `tol` of each other (default tol 0.0)
+
+    `numeric` is first-number-wins: it is blind to negation and position, so it
+    reads 42 out of "not 42, it's 43" and passes it against gold 42. Use it only
+    when the answer essentially *is* the number.
     """
     kind = item.get("match", "exact")
     gold = item["answer"]
